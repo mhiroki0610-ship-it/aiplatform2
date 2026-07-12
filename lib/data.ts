@@ -1,0 +1,15 @@
+import profileJson from "@/data/sample-ip-profile.json";
+import gapsJson from "@/data/sample-gap-insights.json";
+import actionsJson from "@/data/sample-recommendations.json";
+import type { AIPromptResult, GapInsight, IPProfile, RecommendedAction, SNSSignal } from "./types";
+export const profile=profileJson as IPProfile;
+const models=["ChatGPT","Gemini","Perplexity","Google AI Search"];
+const contexts=["初心者におすすめ","海外人気","推しキャラ","考察","グッズ展開","泣ける作品"];
+export const aiResults:AIPromptResult[]=Array.from({length:48},(_,i)=>{const model=models[i%4],context=contexts[Math.floor(i/4)%6],round=Math.floor(i/24),weak=["初心者におすすめ","海外人気"].includes(context),mentioned=!weak||i%3===0;const rank=mentioned?((i+round)%4)+1:null;return{id:`ai-${i+1}`,ipId:profile.id,modelName:model,prompt:`${context}の観点でおすすめのIPを3〜5作品、理由とともに教えてください`,context,language:round?"English":"日本語",mentioned,recommendationRank:rank,responseSummary:mentioned?`Starlight Nexusは${context}の候補として、星間世界とキャラクター関係性の深さが紹介された。`:`競合IPが中心に推薦され、Starlight Nexusへの言及はなかった。`,recommendationReason:mentioned?"世界観の独自性とファンコミュニティの活発さ":"",nonRecommendationReason:mentioned?"":"公式の入門情報と信頼できる英語ソースが不足",sentimentScore:mentioned?78+(i%8):58,contextFitScore:weak?52+(i%9):76+(i%12),accuracyScore:i%9===0?52:84-(i%5),sourceQualityScore:i%7===0?48:70+(i%10),competitorGapScore:weak?68+(i%15):32+(i%20),detectedIssues:[...(i%9===0?["設定情報の不一致"]:[]),...(weak?["競合優位","公式ソース不足"]:[])],createdAt:new Date(2026,6,1+(i%10)).toISOString()}});
+const fanContexts=["推しキャラ","推しメンバー","考察","名シーン","グッズ","イベント","ライブ","ファンクラブ","二次創作","コラボ希望","海外リアクション","初心者向け","離脱兆候"];
+const platforms=["X","YouTube","TikTok","Instagram","Reddit"];
+export const snsSignals:SNSSignal[]=Array.from({length:65},(_,i)=>{const fanContext=fanContexts[i%13],platform=platforms[Math.floor(i/13)],hot=["推しキャラ","考察","グッズ","海外リアクション"].includes(fanContext),foreign=fanContext==="海外リアクション"||platform==="Reddit";const postVolume=(hot?7800:2600)+(i%9)*430;return{id:`sns-${i+1}`,ipId:profile.id,platform,keyword:`Starlight Nexus ${fanContext}`,hashtag:`#${fanContext.replace(/\s/g,"")}`,postVolume,engagementCount:Math.round(postVolume*(hot?.095:.045)),engagementRate:(hot?8.6:3.9)+(i%6)*.25,sentimentScore:fanContext==="離脱兆候"?38:hot?84-(i%5):68+(i%12),fanContext,language:foreign?"英語":"日本語",region:foreign?["US","UK","SG"][i%3]:"日本",samplePosts:[fanContext==="考察"?"第7話の星図、最終章への伏線では？公式設定も読みたい。":fanContext==="グッズ"?"ルナの限定アクスタ、予約販売なら絶対ほしい！":`${fanContext}で今いちばん語りたい作品。`],createdAt:new Date(2026,4+(i%3),5+(i%24)).toISOString(),trendingScore:hot?82+(i%14):50+(i%22),kolScore:platform==="YouTube"?80+(i%12):48+(i%30)}});
+export const gapInsights=gapsJson as GapInsight[];
+export const recommendedActions=actionsJson as RecommendedAction[];
+export const competitorData=[{name:"Starlight Nexus",ai:64,sns:82},{name:"Genshin Impact",ai:91,sns:88},{name:"Demon Slayer",ai:88,sns:78},{name:"Love Live!",ai:75,sns:84},{name:"Dragon Quest",ai:86,sns:72}];
+export const monthlyHeat=["2月","3月","4月","5月","6月","7月"].map((month,i)=>({month,score:[58,62,66,71,76,82][i],volume:[32000,35500,38900,44200,51800,63700][i]}));
