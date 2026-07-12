@@ -1,9 +1,0 @@
-import type { AIPromptResult, SNSSignal, OpportunityFactors, RevenueFactors } from "./types";
-const avg=(v:number[])=>v.length?v.reduce((a,b)=>a+b,0)/v.length:0;
-const clamp=(n:number)=>Math.max(0,Math.min(100,n));
-const rankScore=(rank:number|null,mentioned:boolean)=>!mentioned||rank===null?0:rank===1?100:rank===2?80:rank===3?60:rank===4?40:20;
-export function calculateAIVisibilityScore(rows:AIPromptResult[]){if(!rows.length)return 0;const mention=rows.filter(r=>r.mentioned).length/rows.length*100;return Math.round(clamp(mention*.3+avg(rows.map(r=>rankScore(r.recommendationRank,r.mentioned)))*.2+avg(rows.map(r=>r.contextFitScore))*.2+avg(rows.map(r=>r.sentimentScore))*.1+avg(rows.map(r=>r.accuracyScore))*.1+avg(rows.map(r=>r.sourceQualityScore))*.1))}
-export function calculateSNSHeatScore(rows:SNSSignal[]){if(!rows.length)return 0;const maxV=Math.max(...rows.map(r=>r.postVolume),1),maxE=Math.max(...rows.map(r=>r.engagementRate),.01);return Math.round(clamp(avg(rows.map(r=>r.postVolume/maxV*100))*.25+avg(rows.map(r=>r.engagementRate/maxE*100))*.25+avg(rows.map(r=>r.sentimentScore))*.2+avg(rows.map(r=>r.trendingScore??65))*.15+avg(rows.map(r=>r.kolScore??55))*.15))}
-export function calculateFanGrowthOpportunityScore(f:OpportunityFactors){return Math.round(clamp(f.gap*.3+f.acquisition*.25+f.overseas*.2+f.coreFan*.15+f.ease*.1))}
-export function calculateRevenueOpportunityScore(f:RevenueFactors){return Math.round(clamp(f.merchandise*.25+f.events*.2+f.fanClub*.2+f.collaboration*.15+f.conversion*.2))}
-export function calculateContextScores(ai:AIPromptResult[],sns:SNSSignal[]){const contexts=[...new Set([...ai.map(x=>x.context),...sns.map(x=>x.fanContext)])];return contexts.map(context=>({context,ai:calculateAIVisibilityScore(ai.filter(x=>x.context===context)),sns:calculateSNSHeatScore(sns.filter(x=>x.fanContext===context))}));}

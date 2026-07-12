@@ -1,86 +1,62 @@
 # AI Fan Growth Intelligence
 
-生成AI上でのIPの推薦・説明・比較と、SNS上のファン熱量をつなぎ、ファン育成と収益化施策を提示するIPホルダー向けB2B SaaS MVPです。架空IP「Starlight Nexus」のデータだけで、外部APIキーなしでも全画面をデモできます。
+生成AI検索上でIPがどのように推薦・説明されるかを、直接競合との比較と改善施策まで約1分で確認できる展示会向けMVPです。SNS情報はAI回答にまだ表れていないファンの魅力を発見する補完情報として扱います。
 
-## セットアップ
+## 起動方法
 
 ```bash
 npm install
-copy .env.example .env.local
 npm run dev
 ```
 
-`http://localhost:3000` を開きます。型チェックは `npm run typecheck`、本番ビルドは `npm run build` です。VercelではリポジトリをImportし、必要に応じて環境変数を登録してください。
+`http://localhost:3000` を開きます。外部APIキーなしで動作します。検証は `npm run typecheck` と `npm run build` で行います。
 
-## 使用技術
+## 利用技術
 
-- Next.js App Router / React / TypeScript
-- Tailwind CSS、Radix Slot（shadcn/ui互換のUI基盤）、Lucide Icons
-- Recharts
-- Papa Parse（CSV）
-- ローカルJSON + 決定論的サンプルデータ生成
-- HTML印刷CSSによるPDF保存
+- Next.js App Router（画面・ルーティング）
+- React / TypeScript（UI・型定義）
+- Tailwind CSS（スタイル）
+- Vercel（公開・GitHub連携デプロイ）
 
-## 画面
+## 利用フロー
 
-Home、Dashboard、AI Visibility、SNS Heat、Gap Analysis、Recommendations、Executive Report、Settings / Inputを実装しています。Dashboardは4 KPI、文脈別AI Visibility、SNS時系列、競合レーダー、施策マトリクス、インサイト、TOP5施策、リスクを表示します。
+トップ画面でカテゴリとIPを選び、「AI検索診断を見る」を押します。疑似分析表示の後、`/analysis?ip={slug}` にIP別診断を表示します。URLを直接開いた場合も同じ結果を表示します。
 
-## データ構造
+## 登録IP
 
-`lib/types.ts` に `IPProfile`、`AIPromptResult`、`SNSSignal`、`GapInsight`、`RecommendedAction` を定義しています。`data/` にプロファイルとサンプル定義を配置し、`lib/data.ts` が48件のAI評価、65件のSNSシグナルを再現可能な形で展開します。ギャップ11件、施策16件はJSONに収録しています。
+- アニメ：鬼滅の刃、呪術廻戦、ONE PIECE、SPY×FAMILY
+- ゲーム：ドラゴンクエスト、ファイナルファンタジー、ポケットモンスター、原神
+- プロスポーツ：浦和レッズ、鹿島アントラーズ、横浜F・マリノス、川崎フロンターレ、阪神タイガース
+- アイドル：HANA、ME:I、NiziU、乃木坂46、櫻坂46
 
-## スコアリングロジック
+画像・ロゴは使用せず、文字、図形、汎用アイコンのみで表現しています。
 
-- AI Visibility: Mention Rate 30%、Recommendation Rank 20%、Context Fit 20%、Sentiment 10%、Accuracy 10%、Source Quality 10%。順位点は1位100、2位80、3位60、4位40、5位以下20、未言及0です。
-- SNS Heat: 投稿量25%、エンゲージメント率25%、ポジティブ感情20%、急上昇性15%、KOL関与15%。投稿量と率はデータ内最大値で正規化します。
-- Fan Growth Opportunity: AI/SNSギャップ30%、新規獲得25%、海外20%、コアファン15%、実行容易性10%。
-- Revenue Opportunity: グッズ25%、イベント20%、FC20%、コラボ15%、EC/アプリ/来店20%。
+## データ構造と信頼性
 
-## CSVフォーマット
+`data/ip-datasets/{ip-slug}.json` にIP名、カテゴリ、直接競合、調査基準日、データ区分、対象モデル、質問結果、競合結果、SNS要約、情報源、制約、施策の構造を用意しています。画面用の詳細データは `lib/ip-datasets.ts` が同じ構造で提供します。
 
-Settingsから最大5MBのCSVをアップロードできます。ヘッダーは対象型のフィールド名と一致させてください。配列はJSON配列または `|` 区切り、真偽値は `true/false`、日付はISO 8601を推奨します。必須値と数値型を行単位で検証し、成功件数とエラー行を表示します。アップロードはMVPでは検証・プレビューまでで永続化しません。
+- `verified_snapshot`：事前に確認済みの静的スナップショット
+- `public_source_summary`：公開情報を要約したデータ
+- `illustrative_demo`：説明用の参考値
 
-AI必須例: `id,ipId,modelName,prompt,context,language,mentioned,sentimentScore,contextFitScore,accuracyScore,sourceQualityScore,competitorGapScore,createdAt`
+現時点の全スコア、言及率、順位は説明用の参考値です。実際のAI回答、SNS投稿件数、売上予測ではありません。画面上では「参考値」と明示します。
 
-SNS必須例: `id,ipId,platform,keyword,hashtag,postVolume,engagementCount,engagementRate,sentimentScore,fanContext,language,region,createdAt`
+## CSV
 
-各分析画面からAI Prompt Results、SNS Signals、Gap Insights、Recommended ActionsをUTF-8 BOM付きCSVで出力できます。
+`/api/export-csv?ip=kimetsu-no-yaiba` のようにIPを指定すると、当該IPのAI検索診断データをUTF-8 CSVで出力できます。
 
-## API拡張方法
+## 本番API拡張
 
-`lib/ai-adapters.ts` に `runAIPromptEvaluation`、`parseAIResponse`、`calculatePromptResult` の境界を用意しています。`.env.local` に `OPENAI_API_KEY`、`GEMINI_API_KEY`、`PERPLEXITY_API_KEY` を設定し、`runAIPromptEvaluation` 内のprovider実装を公式SDK/API呼び出しへ差し替えます。未設定時は必ずサンプル結果へフォールバックします。Web UIのスクレイピングは設計対象外です。定期実行はVercel Cron + Queue、結果保存はPostgreSQLを推奨します。
+本番ではOpenAI API、Gemini API、Perplexity API、許諾された検索APIを公式仕様に従って接続します。Web画面の自動スクレイピングは行いません。SNSは公式APIまたは契約済み分析ツールを利用し、取得元、期間、日時を保存します。
 
 ## 本番化ロードマップ
 
-### Phase 1：MVP
+1. 公式APIによる固定質問の複数回評価、モデル版・日時・地域・言語の監査ログ
+2. PostgreSQLへのスナップショット保存とIP別ワークスペース
+3. 契約済みSNS分析ツールとの連携
+4. 認証、権限、定期レポート、アラート
+5. CRM・EC・ファンクラブの実績KPIとの接続
 
-- サンプルデータ、CSVアップロード、ダッシュボード、レポート出力
+## 権利・利用上の注意
 
-### Phase 2：AI API連携
-
-- OpenAI API、Gemini API、Perplexity API、検索API、プロンプト定期実行
-
-### Phase 3：SNSデータ連携
-
-- X API、YouTube API、TikTok / Instagram、Reddit、Meltwater / Brandwatch
-
-### Phase 4：クライアント向けSaaS化
-
-- 認証、ワークスペース、権限管理、定期レポート、アラート通知
-
-### Phase 5：収益貢献分析
-
-- CRM連携、EC連携、ファンクラブデータ連携、広告データ連携、LTV / CV分析
-
-## 利用規約・権利面での注意点
-
-各AI・SNSは公式APIと最新の利用規約、レート制限、保存・二次利用条件に従って接続してください。投稿本文、ユーザーID、画像等には著作権、プライバシー、個人情報、肖像・パブリシティ権が関係します。必要最小限の取得、匿名化、保存期間、削除手段を定め、KOL評価を自動的な不利益判断に用いないでください。IP素材の利用範囲とファンUGCの掲載許諾も確認が必要です。AI回答は変動するため、監査日時、モデル、プロンプト、出典を記録し、人による確認を前提とします。
-
-## 今後の改善案
-
-- PostgreSQL/Drizzleによる永続化と監査ログ
-- 統計的な急上昇検知、重複排除、ボット判定、地域推定の信頼度表示
-- プロンプトセットの版管理と多言語回帰テスト
-- 施策の承認ワークフロー、担当・期限・実績入力
-- GA4/CRM/ECイベントとの因果・増分効果分析
-- アクセシビリティ監査、E2E、Visual Regression、Storybook
+実在IPの名称は診断対象の識別にのみ使用しています。ロゴ、キャラクター、選手、アーティスト画像を利用する場合は権利者確認が必要です。生成AI・SNSの接続は各サービスの利用規約、保存条件、プライバシー要件に従ってください。
